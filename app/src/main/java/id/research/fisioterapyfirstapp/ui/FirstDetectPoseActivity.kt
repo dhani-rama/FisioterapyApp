@@ -1,4 +1,4 @@
-package id.research.fisioterapyfirstapp
+package id.research.fisioterapyfirstapp.ui
 
 import android.content.pm.ApplicationInfo
 import android.content.pm.PackageManager
@@ -9,7 +9,9 @@ import android.util.Size
 import android.view.SurfaceHolder
 import android.view.SurfaceView
 import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import com.google.firebase.database.*
 import com.google.mediapipe.components.*
 import com.google.mediapipe.formats.proto.LandmarkProto
 import com.google.mediapipe.framework.AndroidAssetUtil
@@ -18,11 +20,18 @@ import com.google.mediapipe.framework.PacketGetter
 import com.google.mediapipe.glutil.EglManager
 import com.google.protobuf.InvalidProtocolBufferException
 import id.research.fisioterapyfirstapp.databinding.ActivityFirstDetectPoseBinding
+import id.research.fisioterapyfirstapp.model.KeypointEntity
+import kotlin.math.pow
+import kotlin.math.sqrt
+
 
 class FirstDetectPoseActivity : AppCompatActivity() {
 
     companion object {
         private const val TAG = "Tes"
+        private const val HASIL = "hasil"
+        private const val KEYEX = "KeyEx"
+        private const val TOTAL = "Total"
         private const val BINARY_GRAPH_NAME = "pose_tracking_gpu.binarypb"
         private const val INPUT_VIDEO_STREAM_NAME = "input_video"
         private const val OUTPUT_VIDEO_STREAM_NAME = "output_video"
@@ -44,18 +53,18 @@ class FirstDetectPoseActivity : AppCompatActivity() {
         }
 
         private fun getLandmarksDebugString(landmarks: LandmarkProto.NormalizedLandmarkList): String {
-            var landmarkIndex = 0
             var landmarksString = ""
-            for (landmark in landmarks.landmarkList) {
-                landmarksString += """		Landmark[$landmarkIndex]: (${landmark.x}, ${landmark.y}, ${landmark.z})
-"""
-                ++landmarkIndex
+            for ((landmarkIndex, landmark) in landmarks.landmarkList.withIndex()) {
+                landmarksString += """Landmark[$landmarkIndex]: (${landmark.x}, ${landmark.y}, ${landmark.z})"""
             }
             return landmarksString
         }
     }
 
     private lateinit var mFirstDetectPoseBinding: ActivityFirstDetectPoseBinding
+    private lateinit var mDatabaseReference: DatabaseReference
+    private lateinit var mKeypoint: ArrayList<KeypointEntity>
+
 
     // {@link SurfaceTexture} where the camera-preview frames can be accessed.
     private var previewFrameTexture: SurfaceTexture? = null
@@ -82,10 +91,8 @@ class FirstDetectPoseActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        //setContentView(R.layout.activity_main)
         mFirstDetectPoseBinding = ActivityFirstDetectPoseBinding.inflate(layoutInflater)
         setContentView(mFirstDetectPoseBinding.root)
-        //setContentView(contentViewLayoutResId)
 
         try {
             mInfo = packageManager.getApplicationInfo(packageName, PackageManager.GET_META_DATA)
@@ -94,7 +101,13 @@ class FirstDetectPoseActivity : AppCompatActivity() {
         }
 
         previewDisplayView = SurfaceView(this@FirstDetectPoseActivity)
+
+        mKeypoint = arrayListOf()
+
         setupPreviewDisplayView()
+
+        displayKeypointImage()
+
 
         // Initialize asset manager so that MediaPipe native libraries can access the app assets, e.g.,
         // binary graphs.
@@ -107,9 +120,7 @@ class FirstDetectPoseActivity : AppCompatActivity() {
             INPUT_VIDEO_STREAM_NAME,
             OUTPUT_VIDEO_STREAM_NAME
         )
-        processor!!
-            .videoSurfaceOutput
-            .setFlipY(FLIP_FRAMES_VERTICALLY)
+        processor!!.videoSurfaceOutput.setFlipY(FLIP_FRAMES_VERTICALLY)
         PermissionHelper.checkAndRequestCameraPermissions(this)
         val packetCreator = processor!!.packetCreator
         val inputSidePackets: Map<String, Packet> = HashMap()
@@ -122,36 +133,86 @@ class FirstDetectPoseActivity : AppCompatActivity() {
         processor!!.addPacketCallback(
             OUTPUT_LANDMARKS_STREAM_NAME
         ) { packet: Packet ->
-            Log.v(TAG, "Received multi-hand landmarks packet.")
+            Log.v(TAG, "Received human body pose landmarks packet.")
             Log.v(TAG, packet.toString())
             val landmarksRaw = PacketGetter.getProtoBytes(packet)
             try {
                 val landmarks = LandmarkProto.NormalizedLandmarkList.parseFrom(landmarksRaw)
                 if (landmarks == null) {
-                    Log.v(TAG, "[TS:" + packet.timestamp + "] No iris landmarks.")
+                    Log.v(TAG, "[TS:" + packet.timestamp + "] No pose landmarks.")
                     return@addPacketCallback
                 }
                 // Note: If eye_presence is false, these landmarks are useless.
                 Log.v(
                     TAG,
-                    "[TS:"
-                            + packet.timestamp
-                            + "] #Landmarks for iris: "
-                            + landmarks.landmarkCount
+                    "[TS:" + packet.timestamp + "] #Landmarks for human body pose: " + landmarks.landmarkCount
                 )
                 Log.v(TAG, getLandmarksDebugString(landmarks))
+
+                var xSum: Double = 0.0
+                var ySum: Double = 0.0
+                var key = mKeypoint
+
+                for ((landmarksIndex, landmark) in landmarks.landmarkList.withIndex()) {
+                    var xValue = landmark.x - key[landmarksIndex].x
+                    var yValue = landmark.y - key[landmarksIndex].y
+
+                    xSum += xValue.pow(2.0)
+                    ySum += yValue.pow(2.0)
+
+                    val valueX = xSum / 33.00
+                    val valueY = ySum / 33.00
+
+                    val rmseX = sqrt(valueX)
+                    val rmseY = sqrt(valueY)
+
+                    val rmseValue = (rmseX + rmseY) / 2
+//
+//
+                    Log.i(TOTAL, "Total = $rmseValue")
+//                        Log.i(HASIL, "e[$landmarksIndex][$keyIndex] = $xValue")
+                    Log.i(KEYEX, "Landmark[$landmarksIndex] = $xValue")
+                }
+
+
             } catch (e: InvalidProtocolBufferException) {
                 Log.e(TAG, "Couldn't Exception received - $e")
                 return@addPacketCallback
             }
         }
+
     }
 
-    /*
-    protected val contentViewLayoutResId: Int
-        protected get() = R.layout.activity_main
+    private fun displayKeypointImage() {
+        mDatabaseReference = FirebaseDatabase.getInstance().getReference("firstkeypoint")
+        mDatabaseReference.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    for (item in snapshot.children) {
+                        val collectionKeypoint = item.getValue(KeypointEntity::class.java)
+                        mKeypoint.add(collectionKeypoint!!)
 
-     */
+                        //Log.i(TAG, "$mKeypoint")
+                    }
+
+                    var keypointString = ""
+                    for ((keypointIndex, key) in mKeypoint.withIndex()) {
+                        keypointString = "Keypoint[$keypointIndex]: (${key.x}, ${key.y}, ${key.z})"
+                        Log.d(KEYEX, "$keypointString")
+                    }
+
+
+                }
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                Toast.makeText(this@FirstDetectPoseActivity, "${error.message}", Toast.LENGTH_SHORT)
+                    .show()
+            }
+
+        })
+    }
+
     override fun onResume() {
         super.onResume()
         converter = ExternalTextureConverter(
@@ -179,18 +240,19 @@ class FirstDetectPoseActivity : AppCompatActivity() {
         PermissionHelper.onRequestPermissionsResult(requestCode, permissions, grantResults)
     }
 
-    protected fun onCameraStarted(surfaceTexture: SurfaceTexture?) {
+
+    private fun onCameraStarted(surfaceTexture: SurfaceTexture?) {
         previewFrameTexture = surfaceTexture
         // Make the display view visible to start showing the preview. This triggers the
         // SurfaceHolder.Callback added to (the holder of) previewDisplayView.
         previewDisplayView!!.visibility = View.VISIBLE
     }
 
-    protected fun cameraTargetResolution(): Size? {
+    private fun cameraTargetResolution(): Size? {
         return null // No preference and let the camera (helper) decide.
     }
 
-    fun startCamera() {
+    private fun startCamera() {
         cameraHelper = CameraXPreviewHelper()
         cameraHelper!!.setOnCameraStartedListener { surfaceTexture: SurfaceTexture? ->
             onCameraStarted(
@@ -203,11 +265,12 @@ class FirstDetectPoseActivity : AppCompatActivity() {
         )
     }
 
-    protected fun computeViewSize(width: Int, height: Int): Size {
+    private fun computeViewSize(width: Int, height: Int): Size {
         return Size(width, height)
     }
 
-    protected fun onPreviewDisplaySurfaceChanged(
+
+    fun onPreviewDisplaySurfaceChanged(
         holder: SurfaceHolder?, format: Int, width: Int, height: Int
     ) {
         // (Re-)Compute the ideal size of the camera-preview display (the area that the
@@ -227,30 +290,25 @@ class FirstDetectPoseActivity : AppCompatActivity() {
         )
     }
 
+
     private fun setupPreviewDisplayView() {
         previewDisplayView!!.visibility = View.GONE
         //val viewGroup = findViewById<ViewGroup>(R.id.preview_display_layout)
         mFirstDetectPoseBinding.previewDisplayLayout.addView(previewDisplayView)
-        previewDisplayView!!
-            .holder
-            .addCallback(
-                object : SurfaceHolder.Callback {
-                    override fun surfaceCreated(holder: SurfaceHolder) {
-                        processor!!.videoSurfaceOutput.setSurface(holder.surface)
-                    }
+        previewDisplayView!!.holder.addCallback(object : SurfaceHolder.Callback {
+            override fun surfaceCreated(holder: SurfaceHolder) {
+                processor!!.videoSurfaceOutput.setSurface(holder.surface)
+            }
 
-                    override fun surfaceChanged(
-                        holder: SurfaceHolder,
-                        format: Int,
-                        width: Int,
-                        height: Int
-                    ) {
-                        onPreviewDisplaySurfaceChanged(holder, format, width, height)
-                    }
+            override fun surfaceChanged(
+                holder: SurfaceHolder, format: Int, width: Int, height: Int
+            ) {
+                onPreviewDisplaySurfaceChanged(holder, format, width, height)
+            }
 
-                    override fun surfaceDestroyed(holder: SurfaceHolder) {
-                        processor!!.videoSurfaceOutput.setSurface(null)
-                    }
-                })
+            override fun surfaceDestroyed(holder: SurfaceHolder) {
+                processor!!.videoSurfaceOutput.setSurface(null)
+            }
+        })
     }
 }

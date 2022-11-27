@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "872752047706",
+    "project_id": "fisioterapyapp",
+    "storage_bucket": "fisioterapyapp.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:872752047706:android:b150458658440018cbda63",
+        "android_client_info": {
+          "package_name": "id.research.fisioterapyfirstapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "872752047706-pd43isgqktpp4jj3ing9fgrnt2o9ahf4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUbldwjRML6zLScl89wCKAdBVhKhINLZw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "872752047706-pd43isgqktpp4jj3ing9fgrnt2o9ahf4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
