@@ -1,9 +1,10 @@
-package id.research.fisioterapyfirstapp
+package id.research.fisioterapyfirstapp.ui
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.navigation.findNavController
 import androidx.navigation.ui.setupWithNavController
+import id.research.fisioterapyfirstapp.R
 import id.research.fisioterapyfirstapp.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
@@ -20,4 +21,6 @@ class MainActivity : AppCompatActivity() {
         mMainBinding.bottomNav.setupWithNavController(navController)
 
     }
+
+
 }

@@ -7,13 +7,13 @@
 
     <fragment
         android:id="@+id/home_fragment"
-        android:name="id.research.fisioterapyfirstapp.HomeFragment"
+        android:name="id.research.fisioterapyfirstapp.ui.HomeFragment"
         android:label="fragment_home"
         tools:layout="@layout/fragment_home" />
 
     <fragment
         android:id="@+id/detect_fragment"
-        android:name="id.research.fisioterapyfirstapp.DetectFragment"
+        android:name="id.research.fisioterapyfirstapp.ui.DetectFragment"
         android:label="fragment_detect"
         tools:layout="@layout/fragment_detect" />
 

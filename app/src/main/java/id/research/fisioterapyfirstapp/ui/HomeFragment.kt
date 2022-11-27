@@ -1,10 +1,11 @@
-package id.research.fisioterapyfirstapp
+package id.research.fisioterapyfirstapp.ui
 
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import id.research.fisioterapyfirstapp.R
 
 
 class HomeFragment : Fragment() {
@@ -17,8 +18,4 @@ class HomeFragment : Fragment() {
         return inflater.inflate(R.layout.fragment_home, container, false)
     }
 
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
-
-    }
 }

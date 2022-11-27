@@ -1,4 +1,4 @@
-package id.research.fisioterapyfirstapp
+package id.research.fisioterapyfirstapp.ui
 
 import android.content.Intent
 import android.os.Bundle
@@ -25,7 +25,7 @@ class DetectFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        mDetectBinding.btnDetect.setOnClickListener() {
+        mDetectBinding.btnDetect.setOnClickListener {
             startActivity(Intent(this.requireActivity(), FirstDetectPoseActivity::class.java))
             //activity?.finish()
         }
