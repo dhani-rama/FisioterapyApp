@@ -65,7 +65,6 @@ class FirstDetectPoseActivity : AppCompatActivity() {
     private lateinit var mDatabaseReference: DatabaseReference
     private lateinit var mKeypoint: ArrayList<KeypointEntity>
 
-
     // {@link SurfaceTexture} where the camera-preview frames can be accessed.
     private var previewFrameTexture: SurfaceTexture? = null
 
@@ -108,7 +107,6 @@ class FirstDetectPoseActivity : AppCompatActivity() {
 
         displayKeypointImage()
 
-
         // Initialize asset manager so that MediaPipe native libraries can access the app assets, e.g.,
         // binary graphs.
         AndroidAssetUtil.initializeNativeAssetManager(this)
@@ -149,13 +147,13 @@ class FirstDetectPoseActivity : AppCompatActivity() {
                 )
                 Log.v(TAG, getLandmarksDebugString(landmarks))
 
-                var xSum: Double = 0.0
-                var ySum: Double = 0.0
-                var key = mKeypoint
+                var xSum = 0.0
+                var ySum = 0.0
+                val key = mKeypoint
 
                 for ((landmarksIndex, landmark) in landmarks.landmarkList.withIndex()) {
-                    var xValue = landmark.x - key[landmarksIndex].x
-                    var yValue = landmark.y - key[landmarksIndex].y
+                    val xValue = landmark.x - key[landmarksIndex].x
+                    val yValue = landmark.y - key[landmarksIndex].y
 
                     xSum += xValue.pow(2.0)
                     ySum += yValue.pow(2.0)
@@ -167,19 +165,56 @@ class FirstDetectPoseActivity : AppCompatActivity() {
                     val rmseY = sqrt(valueY)
 
                     val rmseValue = (rmseX + rmseY) / 2
-//
-//
+
                     Log.i(TOTAL, "Total = $rmseValue")
 //                        Log.i(HASIL, "e[$landmarksIndex][$keyIndex] = $xValue")
                     Log.i(KEYEX, "Landmark[$landmarksIndex] = $xValue")
+
+
+                    //val roundOff = (rmseValue * 1000.0).roundToInt() / 1000.0
+                    mDatabaseReference = FirebaseDatabase.getInstance().getReference("rmse")
+                    mDatabaseReference.child("rmseValue").setValue(rmseValue)
+
                 }
-
-
             } catch (e: InvalidProtocolBufferException) {
                 Log.e(TAG, "Couldn't Exception received - $e")
                 return@addPacketCallback
             }
         }
+
+        displayCategory()
+    }
+
+    private fun displayCategory() {
+
+        mDatabaseReference = FirebaseDatabase.getInstance().getReference("rmse")
+        mDatabaseReference.addValueEventListener(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                if (snapshot.exists()) {
+                    for (item in snapshot.children) {
+                        val rmse = item.getValue(Double::class.java)
+                        //mKeypoint.add(rmse!!)
+
+                        with(mFirstDetectPoseBinding) {
+                            layoutAccurate.visibility = View.GONE
+                            layoutNoAccurate.visibility = View.GONE
+                        }
+
+                        if (rmse!! <= 0.850) {
+                            mFirstDetectPoseBinding.layoutNoAccurate.visibility = View.VISIBLE
+                        } else {
+                            mFirstDetectPoseBinding.layoutAccurate.visibility = View.VISIBLE
+                        }
+                    }
+                }
+
+            }
+
+            override fun onCancelled(error: DatabaseError) {
+                TODO("Not yet implemented")
+            }
+
+        })
 
     }
 
@@ -191,25 +226,20 @@ class FirstDetectPoseActivity : AppCompatActivity() {
                     for (item in snapshot.children) {
                         val collectionKeypoint = item.getValue(KeypointEntity::class.java)
                         mKeypoint.add(collectionKeypoint!!)
-
-                        //Log.i(TAG, "$mKeypoint")
                     }
 
-                    var keypointString = ""
+                    var keypointString: String
                     for ((keypointIndex, key) in mKeypoint.withIndex()) {
                         keypointString = "Keypoint[$keypointIndex]: (${key.x}, ${key.y}, ${key.z})"
-                        Log.d(KEYEX, "$keypointString")
+                        Log.d(KEYEX, keypointString)
                     }
-
-
                 }
             }
 
             override fun onCancelled(error: DatabaseError) {
-                Toast.makeText(this@FirstDetectPoseActivity, "${error.message}", Toast.LENGTH_SHORT)
+                Toast.makeText(this@FirstDetectPoseActivity, error.message, Toast.LENGTH_SHORT)
                     .show()
             }
-
         })
     }
 
