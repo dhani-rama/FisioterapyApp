@@ -34,25 +34,70 @@
         app:lottie_rawRes="@raw/icon_runner" />
 
     <com.google.android.material.textview.MaterialTextView
-        android:id="@+id/tv_detect"
+        android:id="@+id/tv_first_detect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="@font/lora"
         android:gravity="center"
         android:maxEms="20"
         android:paddingVertical="16dp"
-        android:text="@string/lorem_ipsum"
+        android:text="1. Posisikan kamera menghadap anda"
         android:textColor="@color/light_purple"
         android:textSize="16sp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/img_logo" />
 
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tv_second_detect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/lora"
+        android:gravity="center"
+        android:maxEms="20"
+        android:paddingVertical="16dp"
+        android:text="2. Ikuti gerakan yang diminta"
+        android:textColor="@color/light_purple"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_first_detect" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tv_third_detect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/lora"
+        android:gravity="center"
+        android:maxEms="20"
+        android:paddingVertical="16dp"
+        android:text="3. Bila muncul tanda “MERAH’, ulangi gerakan"
+        android:textColor="@color/light_purple"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_second_detect" />
+
+    <com.google.android.material.textview.MaterialTextView
+        android:id="@+id/tv_fourth_detect"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:fontFamily="@font/lora"
+        android:gravity="center"
+        android:maxEms="20"
+        android:paddingVertical="16dp"
+        android:text="4. Bila muncul tanda “HIJAU”, lanjut!"
+        android:textColor="@color/light_purple"
+        android:textSize="16sp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_third_detect" />
+
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btn_detect"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="16dp"
         android:clickable="true"
         android:fontFamily="@font/lora_bold"
         android:paddingHorizontal="36dp"
@@ -64,7 +109,7 @@
         app:elevation="4dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_detect"
+        app:layout_constraintTop_toBottomOf="@id/tv_fourth_detect"
         app:rippleColor="#DBDBDB" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

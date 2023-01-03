@@ -22,6 +22,7 @@ import com.google.protobuf.InvalidProtocolBufferException
 import id.research.fisioterapyfirstapp.databinding.ActivityFirstDetectPoseBinding
 import id.research.fisioterapyfirstapp.model.KeypointEntity
 import kotlin.math.pow
+import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 
@@ -147,11 +148,45 @@ class FirstDetectPoseActivity : AppCompatActivity() {
                 )
                 Log.v(TAG, getLandmarksDebugString(landmarks))
 
+                var valueA = 0.0
+                var valueB = 0.0
+                var sigmaAB = 0.0
+                val key = mKeypoint
                 var xSum = 0.0
                 var ySum = 0.0
-                val key = mKeypoint
+
+
 
                 for ((landmarksIndex, landmark) in landmarks.landmarkList.withIndex()) {
+//                    val vectorA = ("${key[landmarksIndex].x}, ${key[landmarksIndex].y}")
+//                    val vectorB = ("${landmark.x}, ${landmark.y}")
+//
+//                    Log.i(KEYEX, "VectorA[$landmarksIndex] = $vectorA")
+//                    Log.i(KEYEX, "VectorB[$landmarksIndex] = $vectorB")
+//
+//                    sigmaAB += BigDecimal()*vectorB[landmarksIndex]
+
+                    //cosine
+
+//                    val vectorA = arrayListOf(key[landmarksIndex].x, key[landmarksIndex].y)
+//                    val vectorB = arrayListOf(landmark.x.toDouble(), landmark.y.toDouble())
+//
+//                    cosineSimilarity(vectorA, vectorB)
+
+
+//                    sigmaAB += vectorA[landmarksIndex]*vectorB[landmarksIndex]
+
+
+////                    val roundOff = (sigmaAB * 1000.0).roundToInt() / 1000.0
+//
+//                    valueA += vectorA[landmarksIndex].pow(2)
+//                    valueB += vectorB[landmarksIndex].pow(2)
+////
+//                    val result = sigmaAB / sqrt(valueA)* sqrt(valueB)
+//
+//                    Log.i(HASIL, "Hasil[$landmarksIndex]= $sigmaAB")
+
+
                     val xValue = landmark.x - key[landmarksIndex].x
                     val yValue = landmark.y - key[landmarksIndex].y
 
@@ -164,14 +199,14 @@ class FirstDetectPoseActivity : AppCompatActivity() {
                     val rmseX = sqrt(valueX)
                     val rmseY = sqrt(valueY)
 
-                    val rmseValue = (rmseX + rmseY) / 2
+                    val rmseValue = ((rmseX + rmseY) / 2) * 10
 
                     Log.i(TOTAL, "Total = $rmseValue")
 //                        Log.i(HASIL, "e[$landmarksIndex][$keyIndex] = $xValue")
                     Log.i(KEYEX, "Landmark[$landmarksIndex] = $xValue")
 
 
-                    //val roundOff = (rmseValue * 1000.0).roundToInt() / 1000.0
+                    val roundOff = (rmseValue * 1000.0).roundToInt() / 1000.0
                     mDatabaseReference = FirebaseDatabase.getInstance().getReference("rmse")
                     mDatabaseReference.child("rmseValue").setValue(rmseValue)
 
@@ -185,6 +220,25 @@ class FirstDetectPoseActivity : AppCompatActivity() {
         displayCategory()
     }
 
+    private fun cosineSimilarity(vectorA: ArrayList<Double>, vectorB: ArrayList<Double>) {
+        var dotProduct = 0.0
+        var normA = 0.0
+        var normB = 0.0
+        for (i in vectorA.indices) {
+            dotProduct += vectorA[i] * vectorB[i]
+            normA += vectorA[i].pow(2.0)
+            normB += vectorB[i].pow(2.0)
+        }
+
+        val result = (dotProduct / (sqrt(normA) * sqrt(normB))) * 100
+        Log.i(HASIL, "Hasil cosinus = $result")
+
+        mDatabaseReference = FirebaseDatabase.getInstance().getReference("cosinussimilarity")
+        mDatabaseReference.child("cosinusvalue").setValue(result)
+
+//        displayCategory()
+    }
+
     private fun displayCategory() {
 
         mDatabaseReference = FirebaseDatabase.getInstance().getReference("rmse")
@@ -192,19 +246,28 @@ class FirstDetectPoseActivity : AppCompatActivity() {
             override fun onDataChange(snapshot: DataSnapshot) {
                 if (snapshot.exists()) {
                     for (item in snapshot.children) {
-                        val rmse = item.getValue(Double::class.java)
+                        val cosinusValue = item.getValue(Double::class.java)!!
                         //mKeypoint.add(rmse!!)
 
                         with(mFirstDetectPoseBinding) {
                             layoutAccurate.visibility = View.GONE
                             layoutNoAccurate.visibility = View.GONE
+                            tvValueCosineGreen.visibility = View.GONE
                         }
 
-                        if (rmse!! <= 0.850) {
-                            mFirstDetectPoseBinding.layoutNoAccurate.visibility = View.VISIBLE
-                        } else {
+                        if (cosinusValue <= 1.2) {
                             mFirstDetectPoseBinding.layoutAccurate.visibility = View.VISIBLE
+                            mFirstDetectPoseBinding.tvValueCosineGreen.visibility = View.VISIBLE
+                            mFirstDetectPoseBinding.tvValueCosineGreen.text =
+                                cosinusValue.toString()
+                        } else if (cosinusValue > 1.2) {
+                            mFirstDetectPoseBinding.layoutNoAccurate.visibility = View.VISIBLE
+                            mFirstDetectPoseBinding.tvValueCosineRed.visibility = View.VISIBLE
+                            mFirstDetectPoseBinding.tvValueCosineRed.text = cosinusValue.toString()
                         }
+
+
+                        //mFirstDetectPoseBinding.tvValueCosine.text = cosinusValue.toString()
                     }
                 }
 
